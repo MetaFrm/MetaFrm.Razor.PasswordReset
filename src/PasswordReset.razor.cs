@@ -25,11 +25,15 @@ namespace MetaFrm.Razor
 
         private TimeSpan RemainTime { get; set; }
 
+        Auth.AuthenticationStateProvider AuthenticationState;
+
         /// <summary>
         /// OnInitialized
         /// </summary>
         protected override void OnInitialized()
         {
+            this.AuthenticationState ??= (this.AuthStateProvider as Auth.AuthenticationStateProvider) ?? (Auth.AuthenticationStateProvider)Factory.CreateInstance(typeof(Auth.AuthenticationStateProvider));
+
             try
             {
                 string[] time = this.GetAttribute("RemainingTime").Split(":");
@@ -54,7 +58,7 @@ namespace MetaFrm.Razor
 
             if (firstRender)
             {
-                if (this.IsLogin())
+                if (this.AuthenticationState.IsLogin())
                     this.Navigation?.NavigateTo("/", true);
 
                 this.JSRuntime?.InvokeVoidAsync("ElementFocus", "email");
@@ -73,7 +77,7 @@ namespace MetaFrm.Razor
             {
                 this.PasswordResetViewModel.IsBusy = true;
 
-                if (!this.IsLogin())
+                if (!this.AuthenticationState.IsLogin())
                 {
                     Response response;
 
@@ -134,7 +138,7 @@ namespace MetaFrm.Razor
         }
 
 
-        private System.Timers.Timer timer = new(1000);
+        private readonly System.Timers.Timer timer = new(1000);
         private async void GetAccessCode()
         {
             try
