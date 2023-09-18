@@ -15,6 +15,7 @@ namespace MetaFrm.Razor
     /// <summary>
     /// PasswordReset
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2012:올바르게 ValueTasks 사용", Justification = "<보류 중>")]
     public partial class PasswordReset
     {
         internal PasswordResetViewModel PasswordResetViewModel { get; set; } = new PasswordResetViewModel();
@@ -25,15 +26,11 @@ namespace MetaFrm.Razor
 
         private TimeSpan RemainTime { get; set; }
 
-        Auth.AuthenticationStateProvider AuthenticationState;
-
         /// <summary>
         /// OnInitialized
         /// </summary>
         protected override void OnInitialized()
         {
-            this.AuthenticationState ??= (this.AuthStateProvider as Auth.AuthenticationStateProvider) ?? (Auth.AuthenticationStateProvider)Factory.CreateInstance(typeof(Auth.AuthenticationStateProvider));
-
             try
             {
                 string[] time = this.GetAttribute("RemainingTime").Split(":");
@@ -51,14 +48,13 @@ namespace MetaFrm.Razor
         /// OnAfterRender
         /// </summary>
         /// <param name="firstRender"></param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2012:올바르게 ValueTasks 사용", Justification = "<보류 중>")]
         protected override void OnAfterRender(bool firstRender)
         {
             base.OnAfterRender(firstRender);
 
             if (firstRender)
             {
-                if (this.AuthenticationState.IsLogin())
+                if (this.AuthState.IsLogin())
                     this.Navigation?.NavigateTo("/", true);
 
                 this.JSRuntime?.InvokeVoidAsync("ElementFocus", "email");
@@ -77,7 +73,7 @@ namespace MetaFrm.Razor
             {
                 this.PasswordResetViewModel.IsBusy = true;
 
-                if (!this.AuthenticationState.IsLogin())
+                if (!this.AuthState.IsLogin())
                 {
                     Response response;
 
@@ -132,9 +128,7 @@ namespace MetaFrm.Razor
         private async Task OnClickFunctionAsync(string action)
         {
             await Task.Delay(100);
-#pragma warning disable CA2012 // 올바르게 ValueTasks 사용
             this.JSRuntime?.InvokeVoidAsync("ElementFocus", "inputaccesscode");
-#pragma warning restore CA2012 // 올바르게 ValueTasks 사용
         }
 
 
@@ -198,29 +192,19 @@ namespace MetaFrm.Razor
             if (args.Key == "Enter" && !this.PasswordResetViewModel.Email.IsNullOrEmpty())
             {
                 this.GetAccessCode();
-#pragma warning disable CA2012 // 올바르게 ValueTasks 사용
                 this.JSRuntime?.InvokeVoidAsync("ElementFocus", "inputaccesscode");
-#pragma warning restore CA2012 // 올바르게 ValueTasks 사용
             }
         }
         private void InputAccessCodeKeydown(KeyboardEventArgs args)
         {
             if (args.Key == "Enter" && this.PasswordResetViewModel.AccessCodeVisible && this.PasswordResetViewModel.AccessCode == this.PasswordResetViewModel.InputAccessCode)
-            {
-#pragma warning disable CA2012 // 올바르게 ValueTasks 사용
                 this.JSRuntime?.InvokeVoidAsync("ElementFocus", "password");
-#pragma warning restore CA2012 // 올바르게 ValueTasks 사용
-            }
         }
 
         private void PasswordKeydown(KeyboardEventArgs args)
         {
             if (args.Key == "Enter" && !this.PasswordResetViewModel.Password.IsNullOrEmpty())
-            {
-#pragma warning disable CA2012 // 올바르게 ValueTasks 사용
                 this.JSRuntime?.InvokeVoidAsync("ElementFocus", "repeatpassword");
-#pragma warning restore CA2012 // 올바르게 ValueTasks 사용
-            }
         }
     }
 }
