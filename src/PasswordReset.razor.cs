@@ -15,10 +15,9 @@ namespace MetaFrm.Razor
     /// <summary>
     /// PasswordReset
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2012:올바르게 ValueTasks 사용", Justification = "<보류 중>")]
     public partial class PasswordReset
     {
-        internal PasswordResetViewModel PasswordResetViewModel { get; set; } = new PasswordResetViewModel();
+        internal PasswordResetViewModel PasswordResetViewModel { get; set; } = new();
 
         private bool _isFocusElement = false;//등록 버튼 클릭하고 AccessCode로 포커스가 한번만 가도록
 
@@ -31,6 +30,10 @@ namespace MetaFrm.Razor
         /// </summary>
         protected override void OnInitialized()
         {
+            base.OnInitialized();
+
+            this.PasswordResetViewModel = this.CreateViewModel<PasswordResetViewModel>();
+
             try
             {
                 string[] time = this.GetAttribute("RemainingTime").Split(":");
@@ -57,12 +60,12 @@ namespace MetaFrm.Razor
                 if (this.AuthState.IsLogin())
                     this.Navigation?.NavigateTo("/", true);
 
-                this.JSRuntime?.InvokeVoidAsync("ElementFocus", "email");
+                ValueTask? _ = this.JSRuntime?.InvokeVoidAsync("ElementFocus", "email");
             }
 
             if (this.PasswordResetViewModel.AccessCodeVisible && !this._isFocusElement)
             {
-                this.JSRuntime?.InvokeVoidAsync("ElementFocus", "inputaccesscode");
+                ValueTask? _ = this.JSRuntime?.InvokeVoidAsync("ElementFocus", "inputaccesscode");
                 this._isFocusElement = true;
             }
         }
@@ -128,7 +131,7 @@ namespace MetaFrm.Razor
         private async Task OnClickFunctionAsync(string action)
         {
             await Task.Delay(100);
-            this.JSRuntime?.InvokeVoidAsync("ElementFocus", "inputaccesscode");
+            ValueTask? _ = this.JSRuntime?.InvokeVoidAsync("ElementFocus", "inputaccesscode");
         }
 
 
@@ -192,19 +195,23 @@ namespace MetaFrm.Razor
             if (args.Key == "Enter" && !this.PasswordResetViewModel.Email.IsNullOrEmpty())
             {
                 this.GetAccessCode();
-                this.JSRuntime?.InvokeVoidAsync("ElementFocus", "inputaccesscode");
+                ValueTask? _ = this.JSRuntime?.InvokeVoidAsync("ElementFocus", "inputaccesscode");
             }
         }
         private void InputAccessCodeKeydown(KeyboardEventArgs args)
         {
             if (args.Key == "Enter" && this.PasswordResetViewModel.AccessCodeVisible && this.PasswordResetViewModel.AccessCode == this.PasswordResetViewModel.InputAccessCode)
-                this.JSRuntime?.InvokeVoidAsync("ElementFocus", "password");
+            {
+                ValueTask? _ = this.JSRuntime?.InvokeVoidAsync("ElementFocus", "password");
+            }
         }
 
         private void PasswordKeydown(KeyboardEventArgs args)
         {
             if (args.Key == "Enter" && !this.PasswordResetViewModel.Password.IsNullOrEmpty())
-                this.JSRuntime?.InvokeVoidAsync("ElementFocus", "repeatpassword");
+            {
+                ValueTask? _ = this.JSRuntime?.InvokeVoidAsync("ElementFocus", "repeatpassword");
+            }
         }
     }
 }
