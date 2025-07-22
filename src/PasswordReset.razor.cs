@@ -17,13 +17,11 @@ namespace MetaFrm.Razor
     /// </summary>
     public partial class PasswordReset
     {
-        internal PasswordResetViewModel PasswordResetViewModel { get; set; } = new();
-
+        private PasswordResetViewModel PasswordResetViewModel { get; set; } = new(null);
         private bool _isFocusElement = false;//등록 버튼 클릭하고 AccessCode로 포커스가 한번만 가도록
-
-        private TimeSpan RemainTimeOrg { get; set; } = new TimeSpan(0, 5, 0);
-
-        private TimeSpan RemainTime { get; set; }
+        private TimeSpan RemainingTimeOrg { get; set; } = new TimeSpan(0, 5, 0);
+        private TimeSpan RemainingTime { get; set; }
+        private bool IsLoadAutoFocus;
 
         /// <summary>
         /// OnInitialized
@@ -36,11 +34,11 @@ namespace MetaFrm.Razor
 
             try
             {
-                string[] time = this.GetAttribute("RemainingTime").Split(":");
+                string[] time = this.GetAttribute(nameof(this.RemainingTime)).Split(":");
+                this.RemainingTimeOrg = new TimeSpan(time[0].ToInt(), time[1].ToInt(), time[2].ToInt());
 
-                this.RemainTimeOrg = new TimeSpan(time[0].ToInt(), time[1].ToInt(), time[2].ToInt());
-
-                this.RemainTime = new TimeSpan(this.RemainTimeOrg.Ticks);
+                this.RemainingTime = new TimeSpan(this.RemainingTimeOrg.Ticks);
+                this.IsLoadAutoFocus = this.GetAttributeBool(nameof(this.IsLoadAutoFocus));
             }
             catch (Exception)
             {
@@ -60,7 +58,10 @@ namespace MetaFrm.Razor
                 if (this.AuthState.IsLogin())
                     this.Navigation?.NavigateTo("/", true);
 
-                ValueTask? _ = this.JSRuntime?.InvokeVoidAsync("ElementFocus", "email");
+                if (this.IsLoadAutoFocus)
+                {
+                    ValueTask? _ = this.JSRuntime?.InvokeVoidAsync("ElementFocus", "email");
+                }
             }
 
             if (this.PasswordResetViewModel.AccessCodeVisible && !this._isFocusElement)
@@ -72,6 +73,8 @@ namespace MetaFrm.Razor
 
         private async Task<bool> OnPasswordResetClick()
         {
+            if (this.PasswordResetViewModel.IsBusy) return false;
+
             try
             {
                 this.PasswordResetViewModel.IsBusy = true;
@@ -167,16 +170,16 @@ namespace MetaFrm.Razor
         {
             try
             {
-                this.RemainTime = this.RemainTime.Add(new TimeSpan(0, 0, -1));
+                this.RemainingTime = this.RemainingTime.Add(new TimeSpan(0, 0, -1));
 
-                if (this.RemainTime.Ticks <= 0)
+                if (this.RemainingTime.Ticks <= 0)
                 {
                     this.PasswordResetViewModel.AccessCodeVisible = false;
                     this._isFocusElement = true;
                     this.PasswordResetViewModel.AccessCode = null;
                     this.PasswordResetViewModel.InputAccessCode = null;
                     this.PasswordResetViewModel.AccessCodeConfirmVisible = false;
-                    this.RemainTime = new TimeSpan(this.RemainTimeOrg.Ticks);
+                    this.RemainingTime = new TimeSpan(this.RemainingTimeOrg.Ticks);
                     this.timer.Stop();
                 }
 

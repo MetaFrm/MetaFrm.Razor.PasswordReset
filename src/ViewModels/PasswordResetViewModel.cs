@@ -1,11 +1,12 @@
 ﻿using MetaFrm.MVVM;
 using MetaFrm.Razor.Essentials.ComponentModel.DataAnnotations;
+using Microsoft.Extensions.Localization;
 using DisplayAttribute = System.ComponentModel.DataAnnotations.DisplayAttribute;
 
 namespace MetaFrm.Razor.ViewModels
 {
     /// <summary>
-    /// RegisterViewModel
+    /// PasswordResetViewModel
     /// </summary>
     public partial class PasswordResetViewModel : BaseViewModel
     {
@@ -67,5 +68,16 @@ namespace MetaFrm.Razor.ViewModels
         /// AccessCodeConfirmVisible
         /// </summary>
         public bool AccessCodeConfirmVisible { get; set; }
+
+        /// <summary>
+        /// PasswordResetViewModel
+        /// </summary>
+        public PasswordResetViewModel() : base() { }
+
+        /// <summary>
+        /// PasswordResetViewModel
+        /// </summary>
+        /// <param name="localization"></param>
+        public PasswordResetViewModel(IStringLocalizer? localization) : base(localization) { }
     }
 }
