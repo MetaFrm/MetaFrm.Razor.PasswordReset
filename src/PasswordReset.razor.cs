@@ -105,7 +105,7 @@ namespace MetaFrm.Razor
                             this.PasswordResetViewModel.Password = string.Empty;
                             this.PasswordResetViewModel.RepeatPassword = string.Empty;
 
-                            this.ToastShow("Password Reset", "Password reset is complete.", ToastDuration.Long);
+                            this.ToastShow("암호 재설정", "비밀번호 재설정이 완료되었습니다.", ToastDuration.Long);
 
                             this.OnAction(this, new MetaFrmEventArgs { Action = "Login" });
                             return true;
@@ -114,7 +114,7 @@ namespace MetaFrm.Razor
                         {
                             if (response.Message != null)
                             {
-                                this.ModalShow("Password Reset", response.Message, new() { { "Ok", Btn.Warning } }, EventCallback.Factory.Create<string>(this, OnClickFunctionAsync));
+                                this.ModalShow("암호 재설정", response.Message, new() { { "Ok", Btn.Warning } }, EventCallback.Factory.Create<string>(this, OnClickFunctionAsync));
                             }
                         }
                     }
