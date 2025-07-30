@@ -15,7 +15,7 @@ namespace MetaFrm.Razor
     /// <summary>
     /// PasswordReset
     /// </summary>
-    public partial class PasswordReset
+    public partial class PasswordReset : IDisposable
     {
         private PasswordResetViewModel PasswordResetViewModel { get; set; } = new(null);
         private bool _isFocusElement = false;//등록 버튼 클릭하고 AccessCode로 포커스가 한번만 가도록
@@ -55,8 +55,8 @@ namespace MetaFrm.Razor
 
             if (firstRender)
             {
-                if (this.AuthState.IsLogin())
-                    this.Navigation?.NavigateTo("/", true);
+                //if (this.AuthState.IsLogin())
+                //    this.Navigation?.NavigateTo("/", true);
 
                 if (this.IsLoadAutoFocus)
                 {
@@ -71,51 +71,77 @@ namespace MetaFrm.Razor
             }
         }
 
+        /// <summary>
+        /// Dispose
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        /// <summary>
+        /// Dispose
+        /// </summary>
+        /// <param name="disposing"></param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                try
+                {
+                    this.timer.Stop();
+                    this.timer.Elapsed -= Timer_Elapsed;
+                    this.timer.Dispose();
+                }
+                catch (Exception) { }
+            }
+        }
+
         private async Task<bool> OnPasswordResetClick()
         {
+            Response response;
+
             if (this.PasswordResetViewModel.IsBusy) return false;
 
             try
             {
                 this.PasswordResetViewModel.IsBusy = true;
 
-                if (!this.AuthState.IsLogin())
+                if (!this.PasswordResetViewModel.Email.IsNullOrEmpty()
+                    && this.PasswordResetViewModel.Password != null && !this.PasswordResetViewModel.Password.IsNullOrEmpty() && !this.PasswordResetViewModel.RepeatPassword.IsNullOrEmpty()
+                    && !this.PasswordResetViewModel.InputAccessCode.IsNullOrEmpty() && this.PasswordResetViewModel.AccessCode == this.PasswordResetViewModel.InputAccessCode)
                 {
-                    Response response;
-
-
-                    if (!this.PasswordResetViewModel.Email.IsNullOrEmpty() 
-                        && this.PasswordResetViewModel.Password != null && !this.PasswordResetViewModel.Password.IsNullOrEmpty() && !this.PasswordResetViewModel.RepeatPassword.IsNullOrEmpty() 
-                        && !this.PasswordResetViewModel.InputAccessCode.IsNullOrEmpty() && this.PasswordResetViewModel.AccessCode == this.PasswordResetViewModel.InputAccessCode)
+                    ServiceData serviceData = new()
                     {
-                        ServiceData serviceData = new()
-                        {
-                            TransactionScope = true,
-                            Token = Factory.AccessKey
-                        };
-                        serviceData["1"].CommandText = this.GetAttribute("PasswordReset");
-                        serviceData["1"].AddParameter("EMAIL", DbType.NVarChar, 100, this.PasswordResetViewModel.Email);
-                        serviceData["1"].AddParameter("ACCESS_NUMBER", DbType.NVarChar, 4000, this.PasswordResetViewModel.Password.ComputeHash());
-                        serviceData["1"].AddParameter("ACCESS_CODE", DbType.NVarChar, 10, this.PasswordResetViewModel.InputAccessCode);
+                        TransactionScope = true,
+                        Token = this.AuthState.IsLogin() ? this.AuthState.Token() : Factory.AccessKey
+                    };
+                    serviceData["1"].CommandText = this.GetAttribute("PasswordReset");
+                    serviceData["1"].AddParameter("EMAIL", DbType.NVarChar, 100, this.PasswordResetViewModel.Email);
+                    serviceData["1"].AddParameter("ACCESS_NUMBER", DbType.NVarChar, 4000, this.PasswordResetViewModel.Password.ComputeHash());
+                    serviceData["1"].AddParameter("ACCESS_CODE", DbType.NVarChar, 10, this.PasswordResetViewModel.InputAccessCode);
 
-                        response = await this.ServiceRequestAsync(serviceData);
+                    response = await this.ServiceRequestAsync(serviceData);
 
-                        if (response.Status == Status.OK)
-                        {
-                            this.PasswordResetViewModel.Password = string.Empty;
-                            this.PasswordResetViewModel.RepeatPassword = string.Empty;
+                    if (response.Status == Status.OK)
+                    {
+                        this.PasswordResetViewModel.Password = string.Empty;
+                        this.PasswordResetViewModel.RepeatPassword = string.Empty;
 
-                            this.ToastShow("암호 재설정", "비밀번호 재설정이 완료되었습니다.", ToastDuration.Long);
+                        this.ToastShow("암호 재설정", "비밀번호 재설정이 완료되었습니다.", ToastDuration.Long);
 
+                        if (!this.AuthState.IsLogin())
                             this.OnAction(this, new MetaFrmEventArgs { Action = "Login" });
-                            return true;
-                        }
                         else
+                            this.TimerStop();
+
+                        return true;
+                    }
+                    else
+                    {
+                        if (response.Message != null)
                         {
-                            if (response.Message != null)
-                            {
-                                this.ModalShow("암호 재설정", response.Message, new() { { "Ok", Btn.Warning } }, EventCallback.Factory.Create<string>(this, OnClickFunctionAsync));
-                            }
+                            this.ModalShow("암호 재설정", response.Message, new() { { "Ok", Btn.Warning } }, EventCallback.Factory.Create<string>(this, OnClickFunctionAsync));
                         }
                     }
                 }
@@ -173,21 +199,23 @@ namespace MetaFrm.Razor
                 this.RemainingTime = this.RemainingTime.Add(new TimeSpan(0, 0, -1));
 
                 if (this.RemainingTime.Ticks <= 0)
-                {
-                    this.PasswordResetViewModel.AccessCodeVisible = false;
-                    this._isFocusElement = true;
-                    this.PasswordResetViewModel.AccessCode = null;
-                    this.PasswordResetViewModel.InputAccessCode = null;
-                    this.PasswordResetViewModel.AccessCodeConfirmVisible = false;
-                    this.RemainingTime = new TimeSpan(this.RemainingTimeOrg.Ticks);
-                    this.timer.Stop();
-                }
+                    this.TimerStop();
 
                 this.InvokeAsync(this.StateHasChanged);
             }
             catch (Exception)
             {
             }
+        }
+        private void TimerStop()
+        {
+            this.PasswordResetViewModel.AccessCodeVisible = false;
+            this._isFocusElement = true;
+            this.PasswordResetViewModel.AccessCode = null;
+            this.PasswordResetViewModel.InputAccessCode = null;
+            this.PasswordResetViewModel.AccessCodeConfirmVisible = false;
+            this.RemainingTime = new TimeSpan(this.RemainingTimeOrg.Ticks);
+            this.timer.Stop();
         }
         private void HandleInvalidSubmit(EditContext context)
         {
