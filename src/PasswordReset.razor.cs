@@ -107,9 +107,9 @@ namespace MetaFrm.Razor
             {
                 this.PasswordResetViewModel.IsBusy = true;
 
-                if (!this.PasswordResetViewModel.Email.IsNullOrEmpty()
-                    && this.PasswordResetViewModel.Password != null && !this.PasswordResetViewModel.Password.IsNullOrEmpty() && !this.PasswordResetViewModel.RepeatPassword.IsNullOrEmpty()
-                    && !this.PasswordResetViewModel.InputAccessCode.IsNullOrEmpty() && this.PasswordResetViewModel.AccessCode == this.PasswordResetViewModel.InputAccessCode)
+                if (!string.IsNullOrEmpty(this.PasswordResetViewModel.Email)
+                    && this.PasswordResetViewModel.Password != null && !string.IsNullOrEmpty(this.PasswordResetViewModel.Password) && !string.IsNullOrEmpty(this.PasswordResetViewModel.RepeatPassword)
+                    && !string.IsNullOrEmpty(this.PasswordResetViewModel.InputAccessCode) && this.PasswordResetViewModel.AccessCode == this.PasswordResetViewModel.InputAccessCode)
                 {
                     ServiceData serviceData = new()
                     {
@@ -223,7 +223,7 @@ namespace MetaFrm.Razor
         }
         private void EmailKeydown(KeyboardEventArgs args)
         {
-            if (args.Key == "Enter" && !this.PasswordResetViewModel.Email.IsNullOrEmpty())
+            if (args.Key == "Enter" && !string.IsNullOrEmpty(this.PasswordResetViewModel.Email))
             {
                 this.GetAccessCode();
                 ValueTask? _ = this.JSRuntime?.InvokeVoidAsync("ElementFocus", "inputaccesscode");
@@ -239,7 +239,7 @@ namespace MetaFrm.Razor
 
         private void PasswordKeydown(KeyboardEventArgs args)
         {
-            if (args.Key == "Enter" && !this.PasswordResetViewModel.Password.IsNullOrEmpty())
+            if (args.Key == "Enter" && !string.IsNullOrEmpty(this.PasswordResetViewModel.Password))
             {
                 ValueTask? _ = this.JSRuntime?.InvokeVoidAsync("ElementFocus", "repeatpassword");
             }
