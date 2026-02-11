@@ -114,7 +114,7 @@ namespace MetaFrm.Razor
                     ServiceData serviceData = new()
                     {
                         TransactionScope = true,
-                        Token = this.AuthState.IsLogin() ? this.AuthState.Token() : Factory.AccessKey
+                        Token = this.AuthState.IsLogin() ? this.AuthState.Token() : Factory.ProjectService.Token
                     };
                     serviceData["1"].CommandText = this.GetAttribute("PasswordReset");
                     serviceData["1"].AddParameter("EMAIL", DbType.NVarChar, 100, this.PasswordResetViewModel.Email);
